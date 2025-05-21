@@ -1,5 +1,5 @@
-user_monthly_income = float(input("Enter your monthly income: "))
-user_monthly_expenses = float(input("Enter your total monthly expenses: "))
+user_monthly_income = int(input("Enter your monthly income: "))
+user_monthly_expenses = int(input("Enter your total monthly expenses: "))
 # Calculate the user's monthly savings
 user_monthly_savings = user_monthly_income - user_monthly_expenses
 # Calculate the user's annual savings   
