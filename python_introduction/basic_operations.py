@@ -8,6 +8,6 @@ difference = number1 - number2
 product = number1 * number2
 
 # Print the results
-print("Addition of 10 and 5 is ",sum)
-print("Subtraction of 10 and 5 is ",difference)
-print("Multiplication of 10 and 5 is ",product)
+print(f"Addition of {number1} and {number2} is {sum}")
+print(f"Subtraction of {number1} and {number2} is {difference}")
+print(f"Multiplication of {number1} and {number2} is {product}")
