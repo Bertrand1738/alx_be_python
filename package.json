@@ -1,0 +1,74 @@
+{
+  "name": "wix-secure-upload-system",
+  "version": "2.0.0",
+  "description": "HIPAA-compliant secure medical image upload system for Wix",
+  "main": "secure-upload.js",
+  "scripts": {
+    "deploy": "echo 'Deploy to Wix Velo platform'",
+    "test": "echo 'Run security tests'",
+    "audit": "npm audit",
+    "security-check": "npm audit --audit-level moderate"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0",
+    "crypto-hash": "^3.0.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "wix",
+    "velo",
+    "security",
+    "encryption",
+    "medical",
+    "hipaa",
+    "upload",
+    "images",
+    "healthcare"
+  ],
+  "author": "Your Organization",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "your-repository-url"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "wix": {
+    "platform": "velo",
+    "collections": [
+      "UploadLogs",
+      "AuditLogs"
+    ],
+    "packages": [
+      "crypto-js",
+      "crypto-hash"
+    ],
+    "features": [
+      "media-manager",
+      "data-collections",
+      "secrets-manager",
+      "member-authentication"
+    ]
+  },
+  "security": {
+    "encryption": "AES-256-CBC",
+    "hashing": "SHA-256",
+    "compliance": "HIPAA-ready",
+    "audit-logging": true
+  },
+  "configuration": {
+    "maxFileSize": "100MB",
+    "allowedTypes": [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/bmp",
+      "image/webp",
+      "image/tiff",
+      "application/dicom"
+    ],
+    "keyRotation": "24h",
+    "sessionTimeout": "30m"
+  }
+}

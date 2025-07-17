@@ -1,0 +1,153 @@
+import { mediaManager } from 'wix-media-backend';
+import { insert } from 'wix-data';
+import { getSecret } from 'wix-secrets-backend';
+
+export async function uploadEncryptedImage(fileBlob, filename, hash, userEmail, fileSize, mimeType) {
+  try {
+    // Convert blob to buffer for upload
+    const fileBuffer = await fileBlob.arrayBuffer();
+    
+    // Create secure filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const secureFilename = `encrypted_${timestamp}_${filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    
+    // Create file object
+    const file = new File([fileBuffer], secureFilename, { type: 'text/plain' });
+
+    // Upload encrypted file to Wix Media Manager
+    const uploadResult = await mediaManager.upload('EncryptedImages', file, {
+      mediaOptions: {
+        mediaType: 'document',
+        mimeType: 'text/plain',
+        description: `Encrypted medical image - Original: ${filename}`
+      }
+    });
+
+    // Generate unique file ID
+    const fileId = generateFileId();
+
+    // Log upload details to collection
+    const logEntry = await insert("UploadLogs", {
+      fileId: fileId,
+      fileName: filename,
+      secureFileName: secureFilename,
+      fileUrl: uploadResult.fileUrl,
+      sha256Hash: hash,
+      originalSize: fileSize,
+      originalMimeType: mimeType,
+      userEmail: userEmail,
+      uploadTime: new Date(),
+      ipAddress: getClientIP(),
+      status: "uploaded",
+      encrypted: true
+    });
+
+    // Optional: Send notification to admin
+    await notifyAdminOfUpload(fileId, filename, userEmail);
+
+    return {
+      success: true,
+      fileId: fileId,
+      url: uploadResult.fileUrl,
+      logId: logEntry._id
+    };
+
+  } catch (error) {
+    console.error("Upload error:", error);
+    
+    // Log failed upload attempt
+    try {
+      await insert("UploadLogs", {
+        fileName: filename,
+        userEmail: userEmail,
+        uploadTime: new Date(),
+        ipAddress: getClientIP(),
+        status: "failed",
+        errorMessage: error.message
+      });
+    } catch (logError) {
+      console.error("Failed to log error:", logError);
+    }
+    
+    throw new Error("Upload failed: " + error.message);
+  }
+}
+
+// Generate unique file ID
+function generateFileId() {
+  return 'IMG_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+}
+
+// Get client IP (basic implementation)
+function getClientIP() {
+  // In Wix, you might need to use request headers or other methods
+  // This is a placeholder - implement based on your needs
+  return "auto-detected";
+}
+
+// Optional: Notify admin of new upload
+async function notifyAdminOfUpload(fileId, filename, userEmail) {
+  try {
+    // You can implement email notification here using wix-crm
+    // or create a notification in your admin dashboard
+    console.log(`New upload: ${fileId} - ${filename} from ${userEmail}`);
+  } catch (error) {
+    console.error("Failed to send notification:", error);
+  }
+}
+
+// Decrypt function for authorized access
+export async function decryptImage(fileId, decryptionKey) {
+  try {
+    // Only allow authorized users to decrypt
+    // Add your authorization logic here
+    
+    const logEntry = await wixData.query("UploadLogs")
+      .eq("fileId", fileId)
+      .find();
+    
+    if (logEntry.items.length === 0) {
+      throw new Error("File not found");
+    }
+    
+    const fileInfo = logEntry.items[0];
+    
+    // Fetch encrypted file from media manager
+    const response = await fetch(fileInfo.fileUrl);
+    const encryptedData = await response.text();
+    
+    // Decrypt the data
+    const CryptoJS = require('crypto-js');
+    const decrypted = CryptoJS.AES.decrypt(encryptedData, decryptionKey);
+    const originalBase64 = decrypted.toString(CryptoJS.enc.Utf8);
+    
+    return {
+      success: true,
+      data: originalBase64,
+      filename: fileInfo.fileName,
+      mimeType: fileInfo.originalMimeType
+    };
+    
+  } catch (error) {
+    console.error("Decryption error:", error);
+    throw new Error("Decryption failed: " + error.message);
+  }
+}
+
+// Get upload statistics (for admin dashboard)
+export async function getUploadStats() {
+  try {
+    const stats = await wixData.aggregate("UploadLogs")
+      .group("status")
+      .count()
+      .run();
+    
+    return {
+      success: true,
+      stats: stats
+    };
+  } catch (error) {
+    console.error("Stats error:", error);
+    return { success: false, error: error.message };
+  }
+}
